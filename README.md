@@ -38,4 +38,4 @@ In order to run these LDpred2-based codes on real-world data, the files made ava
 
 ## Scripts
 
-See [scripts/README.md](https://github.com/comorment/ldpred2-pipeline/scripts/README.md) for further details.
+See [scripts/README.md](scripts/README.md) for further details.

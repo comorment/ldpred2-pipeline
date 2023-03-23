@@ -1,4 +1,4 @@
-# ldpred2-pipeline
+# LDpred2-pipeline
 LDpred2 Docker setup for FinnGen, incorporating the basic dependencies for running [LDpred2](https://privefl.github.io/bigsnpr/articles/LDpred2.html). 
 Based on the implementation made available at [comorment/containers](https://github.com/comorment/containers)
 ## Docker

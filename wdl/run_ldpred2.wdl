@@ -122,7 +122,7 @@ task run_ldpred2 {
         Rscript ${ldpred2} \
             --ldpred-mode ${ldpred2_mode} \
             --col-snp-id MarkerName \
-            --col-chr #CHROM \
+            --col-chr X.CHROM \
             --col-bp POS \
             --col-A1 Allele1 \
             --col-A2 Allele2 \
@@ -139,6 +139,7 @@ task run_ldpred2 {
     }
     output {
         File out_red = "PGS.${ldpred2_mode}"
+        File out_red_png = "PGS.${ldpred2_mode}.png"
     }
 
     runtime {

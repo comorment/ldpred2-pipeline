@@ -1,7 +1,8 @@
 workflow convert_bed_workflow {
-    File bed = "/path/to/finngen_R11_hm3.bed"
-    File createBackingFile = "/path/to/createBackingFile.R"
-    File imputeGenotypes = "/path/to/imputeGenotypes.R"
+    File bed = "LIBRARY_RED/finngen_R11/genotype_plink_1.0/finngen_R11_hm3.bed"
+    File createBackingFile = "SANDBOX_RED/Nelli_F/Nordic_collaboration/ldpred2/LDpred2/createBackingFile.R"
+    File imputeGenotypes = "SANDBOX_RED/Nelli_F/Nordic_collaboration/ldpred2/LDpred2/imputeGenotypes.R"
+    File fun = "SANDBOX_RED/Nelli_F/Nordic_collaboration/ldpred2/LDpred2/fun.R"
     String OutputFilePrefix = "finngen_R11_hm3"
 
     call convert_bed {
@@ -9,6 +10,7 @@ workflow convert_bed_workflow {
              bed=bed, 
              createBackingFile=createBackingFile,
              imputeGenotypes=imputeGenotypes,
+             fun=fun,
              OutputFilePrefix=OutputFilePrefix
     }
 }
@@ -17,6 +19,7 @@ task convert_bed {
     File bed
     File createBackingFile
     File imputeGenotypes
+    File fun
     String OutputFilePrefix
     
     command {
@@ -30,12 +33,19 @@ task convert_bed {
         if test -f ${imputeGenotypes}; then
                 echo "${imputeGenotypes} exists."
         fi
+        if test -f ${fun}; then
+                echo "${fun} exists."
+        fi
         
+        cp ${createBackingFile} .
+        cp ${imputeGenotypes} .
+        cp ${fun} .
+
         # convert and impute inplace
-        Rscript ${createBackingFile} ${bed} ${OutputFilePrefix}
-        Rscript ${imputeGenotypes} \
-                --impute-simple mean0 --cores 4 \
-                --geno-file-rds ${OutputFilePrefix}.rds
+        Rscript createBackingFile.R ${bed} ${OutputFilePrefix}
+        Rscript imputeGenotypes.R \
+            --impute-simple mean0 --cores 4 \
+            --geno-file-rds ${OutputFilePrefix}.rds
     }
 
     output {

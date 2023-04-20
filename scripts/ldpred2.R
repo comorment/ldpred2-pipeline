@@ -7,6 +7,12 @@ library(tools)
 library(argparser, quietly=T)
 library(stringr)
 
+### Maybe there's some environment variable availble to determine the location of the script instead
+coms <- commandArgs()
+coms <- coms[substr(coms, 1, 7) == '--file=']
+dirScript <- dirname(substr(coms, 8, nchar(coms)))
+source(paste0(dirScript, '/fun.R'))
+
 par <- arg_parser('Calculate polygenic scores using ldpred2')
 # Mandatory arguments (files)
 par <- add_argument(par, "--geno-file-rds", help="Input .rds (bigSNPR) file with genotypes")
@@ -14,6 +20,8 @@ par <- add_argument(par, "--sumstats", help="Input file with GWAS summary statis
 par <- add_argument(par, "--out", help="Output file with calculated PGS")
 
 # Optional files
+par <- add_argument(par, "--out-merge", flag=T, help="Merge output with existing file.")
+par <- add_argument(par, "--out-merge-ids", nargs=2, help='Pass ID columns in this order: [family ID] [individual ID]')
 par <- add_argument(par, "--file-keep-snps", help="File with RSIDs of SNPs to keep")
 par <- add_argument(par, "--ld-file", default="/ldpred2_ref/ldref_hm3_plus/LD_with_blocks_chr@.rds", help="LD reference files, split per chromosome; chr label should be indicated by '@' symbol")
 par <- add_argument(par, "--ld-meta-file", default="/ldpred2_ref/map_hm3_plus.rds", help="list of variants in --ld-file")
@@ -54,6 +62,10 @@ fileMetaLD <- parsed$ld_meta_file
 
 ### Optional
 fileKeepSNPs <- parsed$file_keep_snps
+fileOutputMerge <- parsed$out_merge
+fileOutputMergeIDs <- parsed$out_merge_ids
+# Vectors as defaults causes a warning for argparse, so the default is set this way instead
+if (fileOutputMerge & isVarNA(fileOutputMergeIDs)) fileOutputMergeIDs <- COLNAMES_ID_PLINK
 ### Genotype
 genoImputeZero <- parsed$geno_impute_zero
 
@@ -71,7 +83,6 @@ colStatSE <- parsed$col_stat_se
 colPValue <- parsed$col_pvalue
 colN <- parsed$col_n
 mergeByRsid <- !is.na(parsed$merge_by_rsid)
-
 # Polygenic score
 nameScore <- parsed$name_score
 # Parameters to LDpred
@@ -89,16 +100,16 @@ if (!argLdpredMode %in% validModes) stop("--ldpred-mode should be one of: ", pas
 argStatType <- parsed$stat_type
 setSeed <- parsed$set_seed
 
-### Maybe there's some environment variable availble to determine the location of the script instead
-coms <- commandArgs()
-coms <- coms[substr(coms, 1, 7) == '--file=']
-dirScript <- dirname(substr(coms, 8, nchar(coms)))
-source(paste0(dirScript, '/fun.R'))
-
 # These vectors are used to convert headers in the sumstat files to those
 # used by bigsnpr
 colSumstatsOld <- c(  colChr, colSNPID, colBP, colA1, colA2, colStat, colStatSE)
 colSumstatToGeno <- c("chr",  "rsid",  "pos",  "a1",  "a0",  "beta",  "beta_se")
+
+# If the user has requested to merge scores to an existing output file
+if (fileOutputMerge) {
+  cat('Checking ability to merge score with file', fileOutput, 'due to --out-merge\n')
+  verifyScoreOutputFile(fileOutput, nameScore, fileOutputMergeIDs)
+}
 
 cat('Loading backingfile:', fileGeno ,'\n')
 obj.bigSNP <- snp_attach(fileGeno)
@@ -125,12 +136,13 @@ sumstats <- bigreadr::fread2(fileSumstats)
 cat('Loaded', nrow(sumstats), 'SNPs\n')
 
 # Check that there are no characters in chromosome column (causes snp_match to fail)
-if (is.character(sumstats[, colChr])) {
+if (!isOnlyNumeric(sumstats[, colChr])) {
   cat('Removing rows with non-integers in column', colChr, '\n')
   numeric <- getNumericIndices(sumstats[, colChr])
-  cat('Removing', sum(!numeric), 'SNPs...\n')
+  cat('Removing', nrow(sumstats) - length(numeric), 'SNPs...\n')
   sumstats <- sumstats[numeric,]
   cat('Retained', nrow(sumstats), 'SNPs\n')
+  sumstats[, colChr] <- as.numeric(sumstats[, colChr])
 }
 
 # Reame columns in bigSNP object
@@ -278,14 +290,9 @@ map_pgs2 <- snp_match(map_pgs, map, join_by_pos=!mergeByRsid, match.min.prop=0)
 pred_all <- big_prodVec(G, beta * map_pgs2$beta, ind.col=map_pgs2[['_NUM_ID_']])
 obj.bigSNP$fam[,nameScore] <- pred_all
 
-
-cat('\n### Writing fam file with PGS\n')
-colsKeep <- c('family.ID', 'sample.ID', nameScore)
-outputData <- obj.bigSNP$fam[,colsKeep]
-# Rename to stick with plink naming
-colsKeep[1:2] <- c('FID', 'IID')
-colnames(outputData) <- colsKeep
-write.table(outputData, file=fileOutput, row.names = F, quote=F)
+cat('\n### Writing file with PGS\n')
+if (fileOutputMerge) cat('Merging by', paste0(fileOutputMergeIDs, collapse=', '), '\n', sep = '')
+writeScore(obj.bigSNP$fam, fileOutput, nameScore, fileOutputMerge, fileOutputMergeIDs)
 cat('Scores written to', fileOutput,'\n')
 # Drop temporary file
 fileRemoved <- file.remove(paste0(tmp, '.sbk'))

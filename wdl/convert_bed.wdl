@@ -37,6 +37,7 @@ task convert_bed {
                 echo "${fun} exists."
         fi
         
+        # copy R scripts
         cp ${createBackingFile} .
         cp ${imputeGenotypes} .
         cp ${fun} .

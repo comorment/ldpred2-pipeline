@@ -3,6 +3,7 @@ workflow ldpred2_workflow {
     File rds = "/path/to/genofile.rds"
     File bk = "/path/to/genofile.bk"
     File ldpred2 = "/path/to/ldpred2.R"
+    File fun = "/path/to/fun.R"
     String ldpred2_mode = "auto"
     File map = "/path/to/ldpred2_ref/map_hm3_plus.rds"
     File chr1 = "/path/to/ldpred2_ref/ldref_hm3_plus/LD_with_blocks_chr1.rds"
@@ -34,6 +35,7 @@ workflow ldpred2_workflow {
              rds=rds,
              bk=bk,
              ldpred2=ldpred2,
+             fun=fun,
              ldpred2_mode=ldpred2_mode,
              map=map,
              chr1=chr1,
@@ -66,6 +68,7 @@ task run_ldpred2 {
     File rds
     File bk
     File ldpred2
+    File fun
     String ldpred2_mode
     File map
     File chr1
@@ -118,8 +121,12 @@ task run_ldpred2 {
         cp ${chr21} ldpred2_ref/ldref_hm3_plus/.
         cp ${chr22} ldpred2_ref/ldref_hm3_plus/.
 
+        # copy R scripts
+        cp ${ldpred2} .
+        cp ${fun} .
+
         # run LDpred2
-        Rscript ${ldpred2} \
+        Rscript ldpred2.R \
             --ldpred-mode ${ldpred2_mode} \
             --col-snp-id MarkerName \
             --col-chr X.CHROM \

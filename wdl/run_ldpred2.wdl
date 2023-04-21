@@ -2,9 +2,19 @@ workflow ldpred2_workflow {
     File sumstats = "/path/to/summary/statistics/file"
     File rds = "/path/to/genofile.rds"
     File bk = "/path/to/genofile.bk"
-    File ldpred2 = "/path/to/ldpred2.R"
     File fun = "/path/to/fun.R"
+    File ldpred2 = "/path/to/ldpred2.R"
     String ldpred2_mode = "auto"
+    String col_snp_id = "MarkerName"
+    String col_chr = "X.CHROM"
+    String col_bp = "POS"
+    String col_A1 = "Allele1"
+    String col_A2 = "Allele2"
+    String col_stat = "Effect"
+    String col_stat_se = "StdErr"
+    String col_pvalue = "P-value"
+    String col_n = "N"
+    String stat_type = "OR"
     File map = "/path/to/ldpred2_ref/map_hm3_plus.rds"
     File chr1 = "/path/to/ldpred2_ref/ldref_hm3_plus/LD_with_blocks_chr1.rds"
     File chr2 = "/path/to/ldpred2_ref/ldref_hm3_plus/LD_with_blocks_chr2.rds"
@@ -34,9 +44,19 @@ workflow ldpred2_workflow {
              sumstats=sumstats,
              rds=rds,
              bk=bk,
-             ldpred2=ldpred2,
              fun=fun,
+             ldpred2=ldpred2,
              ldpred2_mode=ldpred2_mode,
+             col_snp_id=col_snp_id,
+             col_chr=col_chr,
+             col_bp=col_bp,
+             col_A1=col_A1,
+             col_A2=col_A2,
+             col_stat=col_stat,
+             col_stat_se=col_stat_se,
+             col_pvalue=col_pvalue,
+             col_n=col_n,
+             stat_type=stat_type,
              map=map,
              chr1=chr1,
              chr2=chr2,
@@ -67,9 +87,19 @@ task run_ldpred2 {
     File sumstats
     File rds
     File bk
-    File ldpred2
     File fun
+    File ldpred2
     String ldpred2_mode
+    String col_snp_id
+    String col_chr
+    String col_bp
+    String col_A1
+    String col_A2
+    String col_stat
+    String col_stat_se
+    String col_pvalue
+    String col_n
+    String stat_type
     File map
     File chr1
     File chr2
@@ -94,7 +124,7 @@ task run_ldpred2 {
     File chr21
     File chr22
     
-    command {
+    command <<<
         # put reference datas in place
         mkdir -p ldpred2_ref/ldref_hm3_plus
         cp ${map} ldpred2_ref/.
@@ -128,22 +158,23 @@ task run_ldpred2 {
         # run LDpred2
         Rscript ldpred2.R \
             --ldpred-mode ${ldpred2_mode} \
-            --col-snp-id MarkerName \
-            --col-chr X.CHROM \
-            --col-bp POS \
-            --col-A1 Allele1 \
-            --col-A2 Allele2 \
-            --col-stat Effect \
-            --col-stat-se StdErr \
-            --col-pvalue P-value \
-            --col-n N \
-            --stat-type OR \
+            --col-snp-id ${col_snp_id} \
+            --col-chr ${col_chr} \
+            --col-bp ${col_bp} \
+            --col-A1 ${col_A1} \
+            --col-A2 ${col_A2} \
+            --col-stat ${col_stat} \
+            --col-stat-se ${col_stat_se} \
+            --col-pvalue ${col_pvalue} \
+            --col-n ${col_n} \
+            --stat-type ${stat_type} \
             --ld-file ldpred2_ref/ldref_hm3_plus/LD_with_blocks_chr@.rds \
             --ld-meta-file ldpred2_ref/map_hm3_plus.rds \
             --geno-file-rds ${rds} \
             --sumstats ${sumstats} \
             --out PGS.${ldpred2_mode}
-    }
+    >>>
+
     output {
         File out_red = "PGS.${ldpred2_mode}"
         File out_red_png = "PGS.${ldpred2_mode}.png"

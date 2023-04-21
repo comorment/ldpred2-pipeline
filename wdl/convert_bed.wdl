@@ -6,12 +6,12 @@ workflow convert_bed_workflow {
     String OutputFilePrefix = "finngen_R11_hm3"
 
     call convert_bed {
-         input:
-             bed=bed, 
-             createBackingFile=createBackingFile,
-             imputeGenotypes=imputeGenotypes,
-             fun=fun,
-             OutputFilePrefix=OutputFilePrefix
+        input:
+            bed=bed, 
+            createBackingFile=createBackingFile,
+            imputeGenotypes=imputeGenotypes,
+            fun=fun,
+            OutputFilePrefix=OutputFilePrefix
     }
 }
 

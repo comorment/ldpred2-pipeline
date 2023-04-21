@@ -22,19 +22,19 @@ task convert_bed {
     File fun
     String OutputFilePrefix
     
-    command {
+    command <<<
         # check that files exist
         if test -f ${bed}; then
-                echo "${bed} exists."
+            echo "${bed} exists."
         fi
         if test -f ${createBackingFile}; then
-                echo "${createBackingFile} exists."
+            echo "${createBackingFile} exists."
         fi
         if test -f ${imputeGenotypes}; then
-                echo "${imputeGenotypes} exists."
+            echo "${imputeGenotypes} exists."
         fi
         if test -f ${fun}; then
-                echo "${fun} exists."
+            echo "${fun} exists."
         fi
         
         # copy R scripts
@@ -47,7 +47,7 @@ task convert_bed {
         Rscript imputeGenotypes.R \
             --impute-simple mean0 --cores 4 \
             --geno-file-rds ${OutputFilePrefix}.rds
-    }
+    >>>
 
     output {
         File out_red_bk = "${OutputFilePrefix}.bk"

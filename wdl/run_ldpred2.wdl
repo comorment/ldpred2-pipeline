@@ -182,8 +182,8 @@ task run_ldpred2 {
 
     runtime {
         docker: "eu.gcr.io/finngen-sandbox-v3-containers/ldpred2"
-        cpu: 4
-        memory: "16 GB"
+        cpu: 16
+        memory: "64 GB"
         disks: "local-disk 8000 HDD"
         zones: "europe-west1-b"
     }

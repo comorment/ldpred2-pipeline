@@ -16,7 +16,7 @@ workflow ldpred2_workflow {
     String col_n = "N"
     String stat_type = "OR"
     File map = "LIBRARY_RED/Nelli_F/Nordic_collaboration/ldpred2/map_hm3_plus.rds"
-    Array[File] chr = [
+    Array[File] chr1_11 = [
         "LIBRARY_RED/Nelli_F/Nordic_collaboration/ldpred2/ldref_hm3_plus/LD_with_blocks_chr1.rds",
         "LIBRARY_RED/Nelli_F/Nordic_collaboration/ldpred2/ldref_hm3_plus/LD_with_blocks_chr2.rds",
         "LIBRARY_RED/Nelli_F/Nordic_collaboration/ldpred2/ldref_hm3_plus/LD_with_blocks_chr3.rds",
@@ -27,7 +27,8 @@ workflow ldpred2_workflow {
         "LIBRARY_RED/Nelli_F/Nordic_collaboration/ldpred2/ldref_hm3_plus/LD_with_blocks_chr8.rds",
         "LIBRARY_RED/Nelli_F/Nordic_collaboration/ldpred2/ldref_hm3_plus/LD_with_blocks_chr9.rds",
         "LIBRARY_RED/Nelli_F/Nordic_collaboration/ldpred2/ldref_hm3_plus/LD_with_blocks_chr10.rds",
-        "LIBRARY_RED/Nelli_F/Nordic_collaboration/ldpred2/ldref_hm3_plus/LD_with_blocks_chr11.rds",
+        "LIBRARY_RED/Nelli_F/Nordic_collaboration/ldpred2/ldref_hm3_plus/LD_with_blocks_chr11.rds"]
+    Array[File] chr12_22 = [
         "LIBRARY_RED/Nelli_F/Nordic_collaboration/ldpred2/ldref_hm3_plus/LD_with_blocks_chr12.rds",
         "LIBRARY_RED/Nelli_F/Nordic_collaboration/ldpred2/ldref_hm3_plus/LD_with_blocks_chr13.rds",
         "LIBRARY_RED/Nelli_F/Nordic_collaboration/ldpred2/ldref_hm3_plus/LD_with_blocks_chr14.rds",
@@ -60,7 +61,8 @@ workflow ldpred2_workflow {
             col_n=col_n,
             stat_type=stat_type,
             map=map,
-            chr=chr
+            chr1_11=chr1_11,
+            chr12_22=chr12_22
     }
 }
 
@@ -82,15 +84,20 @@ task run_ldpred2 {
     String col_n
     String stat_type
     File map
-    Array[File] chr
+    Array[File] chr1_11
+    Array[File] chr12_22
     
     command <<<
         # put reference datas in place
         mkdir -p ldpred2_ref/ldref_hm3_plus
         cp ${map} ldpred2_ref/.
-        for file in ${sep=" " chr}; do
+        for file in ${sep=" " chr1_11}; do
             cp "$file" ldpred2_ref/ldref_hm3_plus/.
         done
+        for file in ${sep=" " chr12_22}; do
+            cp "$file" ldpred2_ref/ldref_hm3_plus/.
+        done
+
 
         # copy R scripts
         cp ${ldpred2} .

@@ -16,7 +16,7 @@ workflow ldpred2_workflow {
     String col_n = "N"
     String stat_type = "OR"
     File map = "LIBRARY_RED/Nelli_F/Nordic_collaboration/ldpred2/map_hm3_plus.rds"
-    Array[File] chr1_11 = [
+    Array[File] chr = [
         "LIBRARY_RED/Nelli_F/Nordic_collaboration/ldpred2/ldref_hm3_plus/LD_with_blocks_chr1.rds",
         "LIBRARY_RED/Nelli_F/Nordic_collaboration/ldpred2/ldref_hm3_plus/LD_with_blocks_chr2.rds",
         "LIBRARY_RED/Nelli_F/Nordic_collaboration/ldpred2/ldref_hm3_plus/LD_with_blocks_chr3.rds",
@@ -27,8 +27,7 @@ workflow ldpred2_workflow {
         "LIBRARY_RED/Nelli_F/Nordic_collaboration/ldpred2/ldref_hm3_plus/LD_with_blocks_chr8.rds",
         "LIBRARY_RED/Nelli_F/Nordic_collaboration/ldpred2/ldref_hm3_plus/LD_with_blocks_chr9.rds",
         "LIBRARY_RED/Nelli_F/Nordic_collaboration/ldpred2/ldref_hm3_plus/LD_with_blocks_chr10.rds",
-        "LIBRARY_RED/Nelli_F/Nordic_collaboration/ldpred2/ldref_hm3_plus/LD_with_blocks_chr11.rds"]
-    Array[File] chr12_22 = [
+        "LIBRARY_RED/Nelli_F/Nordic_collaboration/ldpred2/ldref_hm3_plus/LD_with_blocks_chr11.rds",
         "LIBRARY_RED/Nelli_F/Nordic_collaboration/ldpred2/ldref_hm3_plus/LD_with_blocks_chr12.rds",
         "LIBRARY_RED/Nelli_F/Nordic_collaboration/ldpred2/ldref_hm3_plus/LD_with_blocks_chr13.rds",
         "LIBRARY_RED/Nelli_F/Nordic_collaboration/ldpred2/ldref_hm3_plus/LD_with_blocks_chr14.rds",
@@ -39,8 +38,7 @@ workflow ldpred2_workflow {
         "LIBRARY_RED/Nelli_F/Nordic_collaboration/ldpred2/ldref_hm3_plus/LD_with_blocks_chr19.rds",
         "LIBRARY_RED/Nelli_F/Nordic_collaboration/ldpred2/ldref_hm3_plus/LD_with_blocks_chr20.rds",
         "LIBRARY_RED/Nelli_F/Nordic_collaboration/ldpred2/ldref_hm3_plus/LD_with_blocks_chr21.rds",
-        "LIBRARY_RED/Nelli_F/Nordic_collaboration/ldpred2/ldref_hm3_plus/LD_with_blocks_chr22.rds",
-    ]
+        "LIBRARY_RED/Nelli_F/Nordic_collaboration/ldpred2/ldref_hm3_plus/LD_with_blocks_chr22.rds"]
 
     call run_ldpred2 {
         input:
@@ -61,8 +59,7 @@ workflow ldpred2_workflow {
             col_n=col_n,
             stat_type=stat_type,
             map=map,
-            chr1_11=chr1_11,
-            chr12_22=chr12_22
+            chr=chr
     }
 }
 
@@ -84,18 +81,14 @@ task run_ldpred2 {
     String col_n
     String stat_type
     File map
-    Array[File] chr1_11
-    Array[File] chr12_22
+    Array[File] chr
     
     command <<<
         # put reference datas in place
         mkdir -p ldpred2_ref/ldref_hm3_plus
         cp ${map} ldpred2_ref/.
-        for file in ${sep=" " chr1_11}; do
-            cp "$file" ldpred2_ref/ldref_hm3_plus/.
-        done
-        for file in ${sep=" " chr12_22}; do
-            cp "$file" ldpred2_ref/ldref_hm3_plus/.
+        for fname in ${sep=" " chr}; do
+            cp $fname ldpred2_ref/ldref_hm3_plus/.
         done
 
 
@@ -131,7 +124,7 @@ task run_ldpred2 {
     runtime {
         docker: "eu.gcr.io/finngen-sandbox-v3-containers/ldpred2"
         cpu: 16
-        memory: "64 GB"
+        memory: "128 GB"
         disks: "local-disk 8000 HDD"
         zones: "europe-west1-b"
     }

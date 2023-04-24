@@ -1,9 +1,9 @@
 workflow ldpred2_workflow {
-    File sumstats = "/path/to/summary/statistics/file"
+    File sumstats = "LIBRARY_RED/Nelli_F/Nordic_collaboration/NewSumstats.TBL"
     File rds = "/path/to/genofile.rds"
     File bk = "/path/to/genofile.bk"
-    File fun = "/path/to/fun.R"
-    File ldpred2 = "/path/to/ldpred2.R"
+    File fun = "LIBRARY_RED/Nelli_F/Nordic_collaboration/ldpred2/LDpred2/fun.R"
+    File ldpred2 = "/LIBRARY_RED/Nelli_F/Nordic_collaboration/ldpred2/LDpred2/ldpred2.R"
     String ldpred2_mode = "auto"
     String col_snp_id = "MarkerName"
     String col_chr = "#CHROM"
@@ -15,8 +15,31 @@ workflow ldpred2_workflow {
     String col_pvalue = "P-value"
     String col_n = "N"
     String stat_type = "OR"
-    File map = "/path/to/ldpred2_ref/map_hm3_plus.rds"
-    Array[File] chr = glob("/path/to/ldpred2_ref/ldref_hm3_plus/LD_with_blocks_chr*.rds")
+    File map = "LIBRARY_RED/Nelli_F/Nordic_collaboration/ldpred2/map_hm3_plus.rds"
+    Array[File] chr = [
+        "LIBRARY_RED/Nelli_F/Nordic_collaboration/ldpred2/ldref_hm3_plus/LD_with_blocks_chr1.rds",
+        "LIBRARY_RED/Nelli_F/Nordic_collaboration/ldpred2/ldref_hm3_plus/LD_with_blocks_chr2.rds",
+        "LIBRARY_RED/Nelli_F/Nordic_collaboration/ldpred2/ldref_hm3_plus/LD_with_blocks_chr3.rds",
+        "LIBRARY_RED/Nelli_F/Nordic_collaboration/ldpred2/ldref_hm3_plus/LD_with_blocks_chr4.rds",
+        "LIBRARY_RED/Nelli_F/Nordic_collaboration/ldpred2/ldref_hm3_plus/LD_with_blocks_chr5.rds",
+        "LIBRARY_RED/Nelli_F/Nordic_collaboration/ldpred2/ldref_hm3_plus/LD_with_blocks_chr6.rds",
+        "LIBRARY_RED/Nelli_F/Nordic_collaboration/ldpred2/ldref_hm3_plus/LD_with_blocks_chr7.rds",
+        "LIBRARY_RED/Nelli_F/Nordic_collaboration/ldpred2/ldref_hm3_plus/LD_with_blocks_chr8.rds",
+        "LIBRARY_RED/Nelli_F/Nordic_collaboration/ldpred2/ldref_hm3_plus/LD_with_blocks_chr9.rds",
+        "LIBRARY_RED/Nelli_F/Nordic_collaboration/ldpred2/ldref_hm3_plus/LD_with_blocks_chr10.rds",
+        "LIBRARY_RED/Nelli_F/Nordic_collaboration/ldpred2/ldref_hm3_plus/LD_with_blocks_chr11.rds",
+        "LIBRARY_RED/Nelli_F/Nordic_collaboration/ldpred2/ldref_hm3_plus/LD_with_blocks_chr12.rds",
+        "LIBRARY_RED/Nelli_F/Nordic_collaboration/ldpred2/ldref_hm3_plus/LD_with_blocks_chr13.rds",
+        "LIBRARY_RED/Nelli_F/Nordic_collaboration/ldpred2/ldref_hm3_plus/LD_with_blocks_chr14.rds",
+        "LIBRARY_RED/Nelli_F/Nordic_collaboration/ldpred2/ldref_hm3_plus/LD_with_blocks_chr15.rds",
+        "LIBRARY_RED/Nelli_F/Nordic_collaboration/ldpred2/ldref_hm3_plus/LD_with_blocks_chr16.rds",
+        "LIBRARY_RED/Nelli_F/Nordic_collaboration/ldpred2/ldref_hm3_plus/LD_with_blocks_chr17.rds",
+        "LIBRARY_RED/Nelli_F/Nordic_collaboration/ldpred2/ldref_hm3_plus/LD_with_blocks_chr18.rds",
+        "LIBRARY_RED/Nelli_F/Nordic_collaboration/ldpred2/ldref_hm3_plus/LD_with_blocks_chr19.rds",
+        "LIBRARY_RED/Nelli_F/Nordic_collaboration/ldpred2/ldref_hm3_plus/LD_with_blocks_chr20.rds",
+        "LIBRARY_RED/Nelli_F/Nordic_collaboration/ldpred2/ldref_hm3_plus/LD_with_blocks_chr21.rds",
+        "LIBRARY_RED/Nelli_F/Nordic_collaboration/ldpred2/ldref_hm3_plus/LD_with_blocks_chr22.rds",
+    ]
 
     call run_ldpred2 {
         input:
@@ -59,7 +82,7 @@ task run_ldpred2 {
     String col_n
     String stat_type
     File map
-    Array[File]+ chr
+    Array[File] chr
     
     command <<<
         # put reference datas in place

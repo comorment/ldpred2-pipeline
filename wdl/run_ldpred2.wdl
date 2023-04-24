@@ -3,7 +3,7 @@ workflow ldpred2_workflow {
     File rds = "/path/to/genofile.rds"
     File bk = "/path/to/genofile.bk"
     File fun = "LIBRARY_RED/Nelli_F/Nordic_collaboration/ldpred2/LDpred2/fun.R"
-    File ldpred2 = "/LIBRARY_RED/Nelli_F/Nordic_collaboration/ldpred2/LDpred2/ldpred2.R"
+    File ldpred2 = "LIBRARY_RED/Nelli_F/Nordic_collaboration/ldpred2/LDpred2/ldpred2.R"
     String ldpred2_mode = "auto"
     String col_snp_id = "MarkerName"
     String col_chr = "#CHROM"

@@ -91,7 +91,6 @@ task run_ldpred2 {
             cp $fname ldpred2_ref/ldref_hm3_plus/.
         done
 
-
         # copy R scripts
         cp ${ldpred2} .
         cp ${fun} .

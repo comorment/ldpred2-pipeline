@@ -13,7 +13,7 @@ RUN R -e "install.packages('devtools', version='2.4.5', repos='https://packagema
     R -e "install.packages('data.table', version='1.14.6', repos='https://packagemanager.rstudio.com/cran/__linux__/focal/2023-02-16', dependencies=c('Depends', 'Imports', 'LinkingTo'))" && \
     R -e "install.packages('stringr', version='1.5.0', repos='https://packagemanager.rstudio.com/cran/__linux__/focal/2023-02-16', dependencies=c('Depends', 'Imports', 'LinkingTo'))" && \
     R -e "install.packages('R.utils', version='2.12.2', repos='https://packagemanager.rstudio.com/cran/__linux__/focal/2023-02-16', dependencies=c('Depends', 'Imports', 'LinkingTo'))" && \
-    R -e "install.packages('dplyr', version='1.1.0', repos='https://packagemanager.rstudio.com/cran/__linux__/focal/2023-02-16', dependencies=c('Depends', 'Imports', 'LinkingTo'))"
+    R -e "install.packages('tidyverse', version='1.3.2', repos='https://packagemanager.rstudio.com/cran/__linux__/focal/2023-02-16', dependencies=c('Depends', 'Imports', 'LinkingTo'))"
 
 
 # some system dependencies

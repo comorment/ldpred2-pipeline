@@ -14,7 +14,7 @@ workflow ldpred2_workflow {
     String col_stat_se = "StdErr"
     String col_pvalue = "P-value"
     String col_n = "N"
-    String stat_type = "OR"
+    String stat_type = "beta"
     File map = "SANDBOX_RED/Nelli_F/Nordic_collaboration/ldpred2/map_hm3_plus.rds"
     Array[File] chr = [
         "SANDBOX_RED/Nelli_F/Nordic_collaboration/ldpred2/ldref_hm3_plus/LD_with_blocks_chr1.rds",

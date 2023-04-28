@@ -15,6 +15,7 @@ workflow ldpred2_workflow {
     String col_pvalue = "P-value"
     String col_n = "N"
     String stat_type = "beta"
+    String seed = "1234"
     File map = "SANDBOX_RED/Nelli_F/Nordic_collaboration/ldpred2/map_hm3_plus.rds"
     Array[File] chr = [
         "SANDBOX_RED/Nelli_F/Nordic_collaboration/ldpred2/ldref_hm3_plus/LD_with_blocks_chr1.rds",
@@ -58,6 +59,7 @@ workflow ldpred2_workflow {
             col_pvalue=col_pvalue,
             col_n=col_n,
             stat_type=stat_type,
+            seed=seed,
             map=map,
             chr=chr
     }
@@ -80,6 +82,7 @@ task run_ldpred2 {
     String col_pvalue
     String col_n
     String stat_type
+    String seed
     File map
     Array[File] chr
     
@@ -112,6 +115,7 @@ task run_ldpred2 {
             --ld-meta-file ldpred2_ref/map_hm3_plus.rds \
             --geno-file-rds ${rds} \
             --sumstats ${sumstats} \
+            --set-seed ${seed} \
             --out PGS.${ldpred2_mode}
     >>>
 

@@ -15,7 +15,7 @@ source(paste0(dirScript, '/fun.R'))
 
 par <- arg_parser('Calculate polygenic scores using ldpred2')
 # Mandatory arguments (files)
-par <- add_argument(par, "--geno-file-rds", help="Input .rds (bigSNPR) file with genotypes")
+par <- add_argument(par, "--geno-file-rds", help="Input .rds (bigSNPR) file with genotypes. A similarly named .bk (backing) file must exist in the same location")
 par <- add_argument(par, "--sumstats", help="Input file with GWAS summary statistics")
 par <- add_argument(par, "--out", help="Output file with calculated PGS")
 
@@ -41,10 +41,13 @@ par <- add_argument(par, "--col-pvalue", help="P-value column", default="P", nar
 par <- add_argument(par, "--col-n", help="Effective sample size. Override with --effective-sample-size", default="N", nargs=1)
 par <- add_argument(par, "--stat-type", help="Effect estimate type (BETA for linear, OR for odds-ratio)", default="BETA", nargs=1)
 par <- add_argument(par, "--effective-sample-size", help="Effective sample size, if unavailable in sumstats (--col-n)", nargs=1)
+par <- add_argument(par, "--n-cases", help="Nr cases when phenotype is binary. For calculating effective sample size.", nargs=1)
+par <- add_argument(par, "--n-controls", help="Nr controls when phenotype is binary. For calculating effective sample size.", nargs=1)
 # Polygenic score
 par <- add_argument(par, "--name-score", help="Set column name for the created score", nargs=1, default='score')
 # Parameters to LDpred
-par <- add_argument(par, "--hyper-p-length", help="Length of hyperparameter p sequence to use for ldpred-auto", default=30)
+par <- add_argument(par, "--hyper-p-length", help="Length of hyperparameter p sequence to use for --ldpred-mode auto", default=30)
+par <- add_argument(par, "--hyper-p-max", help="Maximum (<1) of hyperparameter p sequence to use for --ldpred-mode auto", default=0.2)
 # Others
 par <- add_argument(par, "--ldpred-mode", help='Ether "auto" or "inf" (infinitesimal)', default="inf")
 par <- add_argument(par, "--cores", help="Number of CPU cores to use, otherwise use the available number of cores minus 1", default=nb_cores())
@@ -57,6 +60,7 @@ parsed <- parse_args(par)
 fileGeno <- parsed$geno_file_rds
 fileSumstats <- parsed$sumstats
 fileOutput <- parsed$out
+fileOutputPlot <- fileOutput # diagnostic plot
 fileLD <- parsed$ld_file
 fileMetaLD <- parsed$ld_meta_file
 
@@ -85,19 +89,26 @@ colN <- parsed$col_n
 mergeByRsid <- !is.na(parsed$merge_by_rsid)
 # Polygenic score
 nameScore <- parsed$name_score
+# If the PGS is assigned a name, the diagnostic plot (auto mode only)
+# will get this name and placed in the same directory as the score
+if (!is.na(nameScore)) {
+	dirPlot <- dirname(fileOutput)
+	fileOutputPlot <- paste0(dirPlot, '/', nameScore, '.png')
+}
 # Parameters to LDpred
 parHyperPLength <- parsed$hyper_p_length
+parHyperPMax <- parsed$hyper_p_max
 # Others
 argEffectiveSampleSize <- parsed$effective_sample_size
+# These two have to be accessed differently due to some argparser bug
+argNCases <- parsed$`n-cases`
+argNControls <- parsed$`n_controls`
 
-if (!is.na(argEffectiveSampleSize)) {
-  argEffectiveSampleSize <- as.numeric(argEffectiveSampleSize)
-  if (!is.numeric(argEffectiveSampleSize)) stop('Effective sample size needs to be numeric, received: ', argEffectiveSampleSize)
-}
 argLdpredMode <- parsed$ldpred_mode
 validModes <- c('inf', 'auto')
 if (!argLdpredMode %in% validModes) stop("--ldpred-mode should be one of: ", paste0(validModes, collapse=', '))
 argStatType <- parsed$stat_type
+if (!argStatType %in% c('BETA', 'OR')) stop('--stat-type should be one of "BETA" or "OR"')
 setSeed <- parsed$set_seed
 
 # These vectors are used to convert headers in the sumstat files to those
@@ -135,17 +146,7 @@ cat('\n### Reading summary statistics', fileSumstats,'\n')
 sumstats <- bigreadr::fread2(fileSumstats)
 cat('Loaded', nrow(sumstats), 'SNPs\n')
 
-# Check that there are no characters in chromosome column (causes snp_match to fail)
-if (!isOnlyNumeric(sumstats[, colChr])) {
-  cat('Removing rows with non-integers in column', colChr, '\n')
-  numeric <- getNumericIndices(sumstats[, colChr])
-  cat('Removing', nrow(sumstats) - length(numeric), 'SNPs...\n')
-  sumstats <- sumstats[numeric,]
-  cat('Retained', nrow(sumstats), 'SNPs\n')
-  sumstats[, colChr] <- as.numeric(sumstats[, colChr])
-}
-
-# Reame columns in bigSNP object
+# Rename columns in bigSNP object
 colMap <- c('chr', 'rsid', 'pos', 'a1', 'a0')
 map <- setNames(obj.bigSNP$map[-3], colMap)
 
@@ -173,16 +174,19 @@ colnames(sumstats) <- colSumstats
 sumstats$a0 <- toupper(sumstats$a0)
 sumstats$a1 <- toupper(sumstats$a1)
 
-# Add effective sample size
-if (!is.na(argEffectiveSampleSize)) {
-  sumstats$n_eff <- argEffectiveSampleSize
-} else {
-  colN <- tolower(colN)
-  if (!colN %in% colSumstats) {
-    stop("Effective sample size has not been provided as an argument and no such column was found in the sumstats (expected ", colN, ")")
-  }
-  sumstats$n_eff <- sumstats[,colN]
+# Check that there are no characters in chromosome column (causes snp_match to fail)
+if (!isOnlyNumeric(sumstats$chr)) {
+  cat('Removing rows with non-integers in column', colChr, '\n')
+  numeric <- getNumericIndices(sumstats$chr)
+  cat('Removing', nrow(sumstats) - length(numeric), 'SNPs...\n')
+  sumstats <- sumstats[numeric,]
+  cat('Retained', nrow(sumstats), 'SNPs\n')
+  sumstats$chr <- as.numeric(sumstats$chr)
 }
+
+### Determine effective sample-size
+if (!is.na(colN)) colN <- tolower(colN)
+sumstats$n_eff <- getEffectiveSampleSize(sumstats, effectiveSampleSize=argEffectiveSampleSize, cases=argNCases, controls=argNControls, colES=colN)
 
 if (!is.na(fileKeepSNPs)) {
   cat('Filtering SNPs using', fileKeepSNPs, '\n')
@@ -246,7 +250,7 @@ for (chr in chr2use) {
 }
 
 cat('\n### Running LD score regression\n')
-ldsc <- with(df_beta, snp_ldsc(ld, ld_size, chi2=(beta/beta_se)^2, sample_size=n_eff, blocks=NULL))
+ldsc <- with(df_beta, snp_ldsc(ld, ld_size, chi2=(beta/beta_se)^2, sample_size=n_eff, blocks=NULL, ncores=NCORES))
 h2_est <- ldsc[["h2"]]
 cat('Results:', 'Intercept =', ldsc[["int"]], 'H2 =', h2_est, '\n')
 
@@ -260,9 +264,9 @@ if (argLdpredMode == 'inf') {
 } else if (argLdpredMode == 'auto') {
   cat('Running LDPRED2 auto model\n')
   if (!is.na(setSeed)) set.seed(setSeed)
-  multi_auto <- snp_ldpred2_auto(corr, df_beta, h2_init=h2_est, vec_p_init=seq_log(1e-4, 0.2, length.out=parHyperPLength), 
+  multi_auto <- snp_ldpred2_auto(corr, df_beta, h2_init=h2_est, vec_p_init=seq_log(1e-4, parHyperPMax, length.out=parHyperPLength), 
                                  allow_jump_sign=F, shrink_corr=0.95, ncores=NCORES)
-  cat('Plotting diagnostics: ', fileOutput, '.png\n', sep='')
+  cat('Plotting diagnostics: ', fileOutputPlot, '\n', sep='')
   library(ggplot2)
   auto <- multi_auto[[1]]
   dta <- data.frame(path_p_est=auto$path_p_est, path_h2_est=auto$path_h2_est, x=1:length(auto$path_p_est))
@@ -274,7 +278,7 @@ if (argLdpredMode == 'inf') {
       geom_hline(aes(yintercept=auto$h2_est), col="blue") + labs(y="h2"),
     ncol=1, align="hv"
   )
-  ggsave(plt, file=paste0(fileOutput, '.png'))
+  ggsave(plt, file=fileOutputPlot)
   cat('Filtering chains\n')
   range <- sapply(multi_auto, function(auto) diff(range(auto$corr_est)))
   # Keep chains that pass the filtering below
@@ -291,8 +295,8 @@ pred_all <- big_prodVec(G, beta * map_pgs2$beta, ind.col=map_pgs2[['_NUM_ID_']])
 obj.bigSNP$fam[,nameScore] <- pred_all
 
 cat('\n### Writing file with PGS\n')
-if (fileOutputMerge) cat('Merging by', paste0(fileOutputMergeIDs, collapse=', '), '\n', sep = '')
+if (fileOutputMerge) cat('Merging by', paste0(fileOutputMergeIDs, collapse=', '), '\n')
 writeScore(obj.bigSNP$fam, fileOutput, nameScore, fileOutputMerge, fileOutputMergeIDs)
-cat('Scores written to', fileOutput,'\n')
+cat('Scores written to', fileOutput, '\n')
 # Drop temporary file
 fileRemoved <- file.remove(paste0(tmp, '.sbk'))

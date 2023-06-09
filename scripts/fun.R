@@ -77,6 +77,11 @@ isVarNA <- function (x) {
   } else return(F)
 }
 
+# Same as isVarNA above but extended to NULL
+isVarNAorNULL <- function (x) {
+  isVarNA(x) | is.null(x)
+}
+
 # Test if x is numeric
 # Haven't found a better way to deal with warnings without doing text based filtering.
 #' @param x A variable to test.
@@ -114,4 +119,45 @@ complementSumstats <- function(sumstats, reference, colRsidSumstats='SNP', colRs
   res <- data.table::merge.data.table(sumstats, reference[,colsRef], by.x=colRsidSumstats, by.y=colRsidRef, all.x=T)
   if (nrow(res) != nrRows) warning('The merge resulted in ', nrow(res), ' rows but input contained ', nrRows, ' rows')
   res
+}
+
+# Get effective sample size from various sources in user input
+# Note that arguments effectiveSampleSize or cases and controls will override
+# effective sample size if provided as a column in sumstats.
+#' @param sumstats A data.frame with sumstats
+#' @param effectiveSampleSize Precalculated effective sample size
+#' @param cases No of cases for a binary trait
+#' @param controls No of controls for a binary trait
+#' @param colES Column containing effective sample size in sumstats
+#' @return Either integer or a vector of integers
+getEffectiveSampleSize <- function (sumstats, effectiveSampleSize=NULL, cases=NULL, controls=NULL, colES=NULL) {
+  argsCcNA <- isVarNAorNULL(cases) + isVarNAorNULL(controls)
+  cases <- as.numeric(cases)
+  controls <- as.numeric(controls)
+  esInSumstats <- ifelse(isVarNAorNULL(colES), F, colES %in% colnames(sumstats))
+  if (argsCcNA == 2 && isVarNAorNULL(effectiveSampleSize) && !esInSumstats) 
+    stop("Effective sample size has not been provided as an argument and no such column was found in the sumstats (column ", colES, ")")
+  if (esInSumstats) esOut <- sumstats[, colES]
+  if (!isVarNAorNULL(effectiveSampleSize)) {
+    if (argsCcNA < 2) stop('Do not provide both --effective sample size and --n-cases/--n-controls')
+    esOut <- as.numeric(effectiveSampleSize)
+    if (!is.numeric(esOut)) stop('Effective sample size needs to be numeric, received: ', effectiveSampleSize)
+  }
+  # User cannot supply only one of --n-cases and --n-controls
+  if (argsCcNA == 1) stop('Provide both --n-cases and --n-controls')
+  if (argsCcNA == 0) esOut <- 1/((1/cases) + (1/controls))
+  esOut
+}
+
+# Rename columns in data.frame
+#' @param df A data.frame
+#' @param old_names A vector of old column names
+#' @param new_names A vector of new column names
+#' @return A data.frame with renamed columns
+rename_columns <- function(df, old_names, new_names) {
+  if (length(old_names) != length(new_names)) {
+    stop("The length of the old_names and new_names lists must be the same.")
+  }
+  colnames(df)[match(old_names, colnames(df))] <- new_names
+  return(df)
 }

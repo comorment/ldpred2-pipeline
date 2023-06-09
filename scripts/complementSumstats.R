@@ -12,10 +12,10 @@ par <- add_argument(par, '--reference', nargs=1, default='/REF/hrc/HRC.r1-1.GRCh
                     help='Reference data file to complement summary statistics with. Anything accepted by bigreadr::fread2')
 par <- add_argument(par, '--col-sumstats-snp-id', nargs=1, default='SNP', help='SNP ID (RSID) column in sumstats')
 par <- add_argument(par, '--col-reference-snp-id', nargs=1, default='ID', help='SNP ID (RSID) column in reference file')
-par <- add_argument(par, '--columns-append', nargs=Inf, default=c('#CHROM', 'POS'), help='Columns from reference data to append to sumstats. Defaults to #CHROM and POS')
-par <- add_argument(par, '--column-names-output', nargs=Inf, default=c('CHR', 'POS'), help='Column names in output. Defaults to column names in sumstats. Defaults to CHR and POS')
-par <- add_argument(par, '--file-output', nargs=1, default=tempfile(pattern='sumstats.txt'), help='Output file name. Defaults to a temporary file (<tempdir>/sumstats.txt)')
+par <- add_argument(par, '--columns-append', nargs="*", default=c('#CHROM', 'POS'), help='Columns from reference data to append to sumstats. Defaults to #CHROM and POS')
+par <- add_argument(par, '--column-names-output', nargs="*", default=c('CHR', 'POS'), help='Column names in output. Defaults to column names in sumstats. Defaults to CHR and POS')
 par <- add_argument(par, '--file-output-col-sep', nargs=1, default='\t', help='Column separator in output. Anything accepted by bigreadr::fwrite2')
+par <- add_argument(par, '--file-output', nargs=1, default=tempfile(), help='Output file name. Defaults to a temporary file (<tempdir>/<tempfilename>)')
 parsed <- parse_args(par)
 fileSumstats <- parsed$sumstats
 reference <- parsed$reference
@@ -38,6 +38,6 @@ reference <- bigreadr::fread2(reference)
 if (!noPrint) cat('Complementing sumstats\n')
 sumstats <- complementSumstats(sumstats, reference, colRsidSumstats=colSumstatsSnpId, colRsidRef=colRefSnpId, colsKeepReference=colsAppend)
 if (!noPrint) cat('Renaming columns\n')
-colnames(sumstats) <- parsed$column_names_output
+sumstats <- rename_columns(sumstats, colsAppend, parsed$column_names_output)
 if (!noPrint) cat('Writing output file', fileOut, '\n')
 bigreadr::fwrite2(sumstats, file=fileOut, sep=fileOutColSep)
